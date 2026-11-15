@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Університет імені Альфреда Нобеля</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+:root{
+  --ink:#00386F;        /* ANU navy */
+  --violet:#4F2E83;     /* logo purple */
+  --lavender:#C5CEF7;   /* brand lavender, the planet's sky */
+  --mist:#E6EAFC;
+  --paper:#F7F8FD;
+  --soft:#3B4A63;
+  --muted:#5B6680;
+  --line:#D5DBF6;
+  --planet-sky:#C2CCF1; /* exact background of the planet animation */
+  --font-display:'Unbounded','Roboto',Arial,sans-serif;
+  --font-body:'Roboto',Arial,sans-serif;
+  --rail:288px;
+  /* layout: fixed chapter rail + one chapter per view; on large screens every view is a 1440×960 stage scaled to fill the screen like a slide */
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit}
+p{margin:0}
+h1,h2,h3{text-wrap:balance}
+:focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:6px}
+.vh-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ================= rail ================= */
+.rail{position:fixed;inset:0 auto 0 0;width:min(320px,86vw);background:var(--ink);color:var(--paper);display:flex;flex-direction:column;gap:16px;padding:22px 18px 18px;z-index:30;overflow-y:auto;transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 0 60px rgba(0,0,0,.35)}
+.rail.open{transform:none}
+.rail-logo{display:flex;justify-content:center;background:var(--lavender);border-radius:18px;padding:12px 16px;text-decoration:none}
+.rail-logo img{width:112px}
+.rail-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;flex:1}
+.rail-list a{display:flex;gap:12px;align-items:baseline;padding:8px 12px;border-radius:12px;text-decoration:none;color:#D3DBF7;font-size:15px;line-height:1.3;transition:background .15s,color .15s}
+.rail-list .n{font-family:var(--font-display);font-size:11px;letter-spacing:.06em;color:var(--lavender);opacity:.75;min-width:22px;font-variant-numeric:tabular-nums}
+.rail-list a:hover{background:rgba(197,206,247,.14);color:#fff}
+.rail-list a[aria-current="page"]{background:var(--lavender);color:var(--ink);font-weight:500}
+.rail-list a[aria-current="page"] .n{color:var(--violet);opacity:1}
+.rail-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid rgba(197,206,247,.25);padding-top:14px}
+.rail-foot button{font:inherit;font-size:14px;color:var(--ink);background:var(--lavender);border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+.rail-foot button:disabled{opacity:.4;cursor:default}
+.rail-foot .fs{background:transparent;color:var(--lavender);border:1px solid rgba(197,206,247,.5);width:100%}
+.counter{font-family:var(--font-display);font-size:12px;color:var(--lavender);margin-right:auto;padding-left:4px;font-variant-numeric:tabular-nums}
+
+.topbar{display:flex;position:sticky;top:0;z-index:25;align-items:center;justify-content:space-between;gap:12px;background:var(--ink);color:var(--paper);padding:10px 16px}
+.topbar .t{font-family:var(--font-display);font-size:13px;font-weight:500}
+.topbar button{font:inherit;font-weight:700;font-size:15px;background:var(--lavender);color:var(--ink);border:0;border-radius:10px;padding:8px 14px;cursor:pointer}
+.progress{position:sticky;top:0;height:4px;background:var(--mist);z-index:24}
+.progress span{display:block;height:100%;width:0;background:var(--violet);transition:width .35s ease}
+
+/* ================= views: base (phones, small windows) ================= */
+.view{max-width:1100px;margin:0 auto;padding:28px 18px 36px;animation:viewIn .45s ease both}
+.view[hidden]{display:none}
+@keyframes viewIn{from{opacity:.35;transform:translateY(10px)}to{opacity:1;transform:none}}
+.stage{display:flex;flex-direction:column}
+.vb{display:flex;flex-direction:column;gap:22px;margin-top:22px}
+.vf{display:flex;justify-content:flex-end;margin-top:30px}
+.next-link{font-weight:700;color:var(--violet);text-decoration:none;font-size:16px}
+.next-link:hover{text-decoration:underline}
+
+.eyebrow{display:flex;align-items:center;gap:12px;font-family:var(--font-display);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--violet)}
+.eyebrow .num{background:var(--violet);color:var(--paper);border-radius:999px;padding:4px 11px;letter-spacing:.06em}
+h2{font-family:var(--font-display);font-weight:600;font-size:clamp(26px,6vw,40px);line-height:1.12;letter-spacing:-.01em;margin:14px 0 0}
+.lead{font-size:18px;color:var(--soft)}
+.note{font-size:16px;color:var(--soft)}
+.pill{display:inline-block;background:var(--violet);color:var(--paper);border-radius:14px;padding:12px 18px;font-weight:700;font-size:16px;line-height:1.35}
+.pill.ink{background:var(--ink)}
+
+/* landing */
+.hero{background:var(--planet-sky);border-radius:28px;display:grid;gap:20px;padding:28px 24px;overflow:hidden}
+.hero .logo{width:130px}
+.hero h1{font-family:var(--font-display);font-weight:600;font-size:clamp(30px,7vw,52px);line-height:1.06;letter-spacing:-.02em;margin:20px 0 14px}
+.hero .tag{font-family:var(--font-display);font-size:17px;font-weight:500;color:var(--violet)}
+.hero .meta{margin-top:12px;font-size:16px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:16px;text-decoration:none;border-radius:14px;padding:12px 18px;background:var(--ink);color:var(--paper);border:2px solid var(--ink)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:hover{background:var(--violet);border-color:var(--violet);color:var(--paper)}
+.orbit{position:relative;width:100%;max-width:420px;aspect-ratio:1;justify-self:center}
+.orbit svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.orbit .planet{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;-webkit-mask-image:radial-gradient(circle closest-side,#000 88%,transparent 100%);mask-image:radial-gradient(circle closest-side,#000 88%,transparent 100%)}
+.spin-a,.spin-b,.spin-c{transform-box:view-box;transform-origin:50% 50%}
+.spin-a{animation:spin 90s linear infinite}
+.spin-b{animation:spin 60s linear infinite reverse}
+.spin-c{animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hub-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:8px}
+.hub-head h2{margin:0;font-size:24px}
+.hub-head p{color:var(--muted);font-size:14px}
+.hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.hub a{position:relative;display:flex;flex-direction:column;gap:6px;padding:16px 16px 18px;background:var(--mist);border:1px solid var(--line);border-radius:16px;text-decoration:none;transition:transform .15s,background .15s}
+.hub a:hover{background:var(--lavender);transform:translateY(-2px)}
+.hub .n{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--violet);line-height:1}
+.hub .t{font-weight:700;font-size:16px;line-height:1.3}
+.hub .key{position:absolute;top:14px;right:12px;font-size:11px;font-weight:700;color:var(--paper);background:var(--ink);border-radius:999px;padding:3px 9px}
+.hub a.start{background:var(--ink);border-color:var(--ink);color:var(--paper);justify-content:center}
+.hub a.start .n{color:var(--lavender)}
+.hub a.start:hover{background:var(--violet)}
+
+/* numbers */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:26px 20px}
+.stat{border-top:4px solid var(--ink);padding-top:12px}
+.stat.v{border-color:var(--violet)}
+.stat b{display:block;font-family:var(--font-display);font-weight:600;font-size:30px;line-height:1.05;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.stat.v b{color:var(--violet)}
+.stat span{display:block;margin-top:8px;color:var(--soft);font-size:15px;line-height:1.4}
+.chips-wrap h3{margin:0 0 12px;font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{background:var(--mist);border-radius:999px;padding:7px 16px;font-size:15px}
+
+/* history */
+.history{display:flex;flex-direction:column;gap:20px}
+.history .orbit{max-width:320px}
+.orbit-caption{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:56%;text-align:center}
+.orbit-caption b{display:block;font-family:var(--font-display);font-weight:600;font-size:22px}
+.orbit-caption span{display:block;margin-top:6px;font-size:14px;color:var(--soft);line-height:1.35}
+.axis{display:none}
+.tl{position:relative;list-style:none;margin:0;padding:6px 0 0}
+.tl::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:3px;background:var(--ink)}
+.tl li{position:relative;padding:0 0 20px 36px}
+.tl li::after{content:"";position:absolute;top:8px;left:1px;width:12px;height:12px;border:3px solid var(--ink);background:var(--paper);border-radius:50%}
+.tl .y{display:block;font-family:var(--font-display);font-size:20px;font-weight:500;line-height:1.2}
+.tl p{margin-top:4px;color:var(--soft);font-size:15.5px;line-height:1.45}
+
+/* mission */
+.mission{font-family:var(--font-display);font-weight:500;font-size:clamp(20px,5vw,32px);line-height:1.28;letter-spacing:-.01em}
+.mission::before{content:"«"}
+.mission::after{content:"»"}
+.values-wrap{display:grid;gap:24px}
+.values{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.value{background:var(--mist);border-radius:16px;padding:16px 18px}
+.value h3{margin:0;font-size:17px;line-height:1.3}
+.value p{margin-top:6px;color:var(--soft);font-size:15px;line-height:1.4}
+.values-wrap img{max-width:220px;justify-self:center}
+
+/* split layouts */
+.split{display:grid;gap:28px;align-items:center}
+.stack{display:flex;flex-direction:column;gap:20px}
+.panel{background:var(--ink);color:var(--paper);border-radius:22px;padding:8px 24px}
+.fact{padding:16px 0;border-bottom:1px solid #2A5A8C}
+.fact:last-child{border-bottom:0}
+.fact b{display:block;font-family:var(--font-display);font-weight:600;font-size:22px;color:var(--lavender)}
+.fact span{display:block;margin-top:4px;color:var(--mist);font-size:15px}
+.facts-light .fact{border-color:var(--line)}
+.facts-light .fact b{color:var(--violet)}
+.facts-light .fact span{color:var(--soft)}
+.facts-light .fact:first-child{border-top:4px solid var(--violet)}
+.duo{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.mini{background:var(--mist);border-radius:16px;padding:14px 16px}
+.mini b{display:block;font-family:var(--font-display);font-weight:600;font-size:22px;color:var(--violet)}
+.mini span{color:var(--soft);font-size:14.5px}
+.poster{display:block;width:100%;border:0;padding:0;background:none;cursor:zoom-in;border-radius:16px;overflow:hidden;box-shadow:0 22px 44px -26px rgba(0,56,111,.55);transition:transform .2s}
+.poster:hover{transform:scale(1.01)}
+.poster img{width:100%}
+.poster-cap{margin-top:8px;font-size:13px;color:var(--muted)}
+.logo-sm{height:64px;width:auto;object-fit:contain;align-self:flex-start}
+.big{font-family:var(--font-display);font-weight:600;font-size:56px;line-height:1;letter-spacing:-.02em}
+.list{margin:0;padding-left:22px;color:var(--soft);font-size:17px;display:grid;gap:8px}
+.intl{display:grid;gap:24px;align-items:center}
+.intl .map{max-width:320px;justify-self:center}
+.strip{background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:8px 10px;overflow-x:auto}
+.strip img{min-width:860px;width:100%}
+
+/* finale */
+.finale{background:var(--ink);color:var(--paper);border-radius:28px;padding:28px 22px;display:grid;gap:28px;align-items:center}
+.finale .eyebrow{color:var(--lavender)}
+.finale .eyebrow .num{background:var(--lavender);color:var(--ink)}
+.finale h2{color:var(--paper)}
+.traits{display:grid;gap:18px;margin-top:22px}
+.trait{border-left:4px solid var(--lavender);padding-left:18px}
+.trait h3{margin:0;font-size:17px;color:var(--lavender)}
+.trait p{margin-top:6px;font-size:15.5px;line-height:1.5;color:var(--mist)}
+.finale .orbit{max-width:300px}
+.finale .orbit .disc{position:absolute;left:50%;top:50%;width:66%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:var(--lavender);overflow:hidden}
+.finale .orbit .disc img{width:100%;height:100%;object-fit:cover}
+.thanks{margin-top:24px;font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--lavender)}
+
+/* form */
+.table-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:15.5px}
+th,td{text-align:left;vertical-align:top;padding:12px 16px;border-bottom:1px solid var(--line)}
+th{width:28%;font-weight:700;background:var(--mist)}
+tr:last-child th,tr:last-child td{border-bottom:0}
+
+/* lightbox */
+dialog.lightbox{border:0;padding:0;background:transparent;max-width:96vw;max-height:96vh}
+dialog.lightbox::backdrop{background:rgba(0,28,56,.86)}
+dialog.lightbox img{max-width:94vw;max-height:86vh;border-radius:12px}
+dialog.lightbox button{display:block;margin:12px auto 0;font:inherit;font-weight:700;color:var(--ink);background:var(--lavender);border:0;border-radius:12px;padding:10px 18px;cursor:pointer}
+
+/* ================= tablets ================= */
+@media (min-width:760px){
+  .view{padding:40px 36px 44px}
+  .hero{grid-template-columns:1.2fr .8fr;align-items:center;padding:36px 40px}
+  .split{grid-template-columns:1fr 1fr}
+  .values-wrap{grid-template-columns:1fr 220px;align-items:end}
+  .finale{grid-template-columns:1.3fr .7fr;padding:36px 40px}
+  .intl{grid-template-columns:1fr 300px}
+  .history{display:grid;grid-template-columns:300px 1fr;align-items:start}
+}
+
+/* ================= desktop: rail always visible ================= */
+@media (min-width:1024px){
+  .rail{transform:none;width:var(--rail);box-shadow:none;transition:none}
+  .topbar{display:none}
+  .progress{position:fixed;top:0;left:var(--rail);right:0}
+  main{margin-left:var(--rail)}
+}
+
+/* ================= stage mode: big screens, every view is a 1440×960 slide scaled to fit ================= */
+@media (min-width:1024px) and (min-height:560px){
+  html,body{overflow:hidden}
+  main{position:fixed;top:4px;left:var(--rail);right:0;bottom:0;margin:0;overflow:hidden}
+  .view{position:absolute;inset:0;max-width:none;margin:0;padding:0;display:flex;align-items:center;justify-content:center}
+  .view[hidden]{display:none}
+  .stage{flex:none;width:1440px;height:960px;padding:52px 72px 40px;position:relative;transform:scale(var(--k,1));transform-origin:center center}
+  .vb{flex:1;min-height:0;justify-content:center;gap:30px;margin-top:26px}
+  .vf{margin-top:18px}
+  .next-link{font-size:19px}
+  .eyebrow{font-size:15px}
+  .eyebrow .num{padding:5px 13px}
+  h2{font-size:52px;margin-top:16px;max-width:1180px}
+  .lead{font-size:25px;line-height:1.5}
+  .note{font-size:19px;line-height:1.5}
+  .pill{font-size:21px;padding:14px 22px;border-radius:16px}
+
+  /* landing */
+  .home .stage{padding:44px 64px 36px}
+  .home .vb{margin-top:0;justify-content:space-between;gap:26px}
+  .hero{grid-template-columns:1fr 440px;gap:24px;padding:38px 52px;border-radius:34px}
+  .hero .logo{width:124px}
+  .hero h1{font-size:52px;margin:22px 0 14px}
+  .hero .tag{font-size:23px}
+  .hero .meta{font-size:19px;max-width:640px}
+  .hero-actions{margin-top:24px}
+  .btn{font-size:19px;padding:14px 22px}
+  .hero .orbit{max-width:440px}
+  .hub-head h2{font-size:30px}
+  .hub-head p{font-size:17px}
+  .hub{grid-template-columns:repeat(6,1fr);gap:14px}
+  .hub a{padding:18px 18px 20px;min-height:122px}
+  .hub .n{font-size:30px}
+  .hub .t{font-size:18px}
+  .hub .key{font-size:12px;top:16px;right:14px}
+
+  /* numbers */
+  .stats{grid-template-columns:repeat(4,1fr);gap:34px 30px}
+  .stat{padding-top:16px}
+  .stat b{font-size:58px}
+  .stat span{font-size:20px;margin-top:10px}
+  .chips-wrap h3{font-size:23px;margin-bottom:16px}
+  .chip{font-size:20px;padding:10px 22px}
+
+  /* history: fixed coordinates like the printed timeline */
+  .history-body{display:block;margin:0}
+  .history .orbit{position:absolute;left:56px;top:270px;width:520px;max-width:none}
+  .orbit-caption{width:47%}
+  .orbit-caption b{font-size:30px}
+  .orbit-caption span{font-size:16px;margin-top:8px}
+  .axis{display:block;position:absolute;left:944px;top:136px;width:110px;height:740px}
+  .tl{position:static;padding:0}
+  .tl::before{display:none}
+  .tl li{position:absolute;left:var(--x);top:var(--y);width:330px;padding:0;text-align:var(--ta,left)}
+  .tl li::after{display:none}
+  .tl .y{font-size:29px}
+  .tl p{font-size:17.5px;line-height:1.4;margin-top:6px}
+
+  /* mission */
+  .mission{font-size:44px;line-height:1.25}
+  .values-wrap{grid-template-columns:1fr 330px;gap:40px;align-items:end}
+  .values{grid-template-columns:repeat(3,1fr);gap:16px}
+  .value{padding:24px 24px 26px;border-radius:20px}
+  .value h3{font-size:23px}
+  .value p{font-size:19.5px;margin-top:8px}
+  .values-wrap img{max-width:330px}
+
+  /* shared */
+  .split{gap:56px}
+  .stack{gap:26px}
+  .panel{padding:14px 40px;border-radius:28px}
+  .fact{padding:22px 0}
+  .fact b{font-size:38px}
+  .fact span{font-size:21px;margin-top:6px}
+  .duo{gap:16px}
+  .mini{padding:20px 22px;border-radius:20px}
+  .mini b{font-size:36px}
+  .mini span{font-size:19px}
+  .poster{border-radius:20px}
+  .poster-cap{font-size:15px}
+  .logo-sm{height:96px}
+
+  .program .split{grid-template-columns:1.1fr .9fr}
+  .research .split{grid-template-columns:1fr 720px;gap:48px}
+  .civic .split{grid-template-columns:820px 1fr;gap:48px}
+  .civic .facts-light .fact{padding:18px 0}
+  .civic .facts-light .fact b{font-size:34px}
+  .civic .facts-light .fact span{font-size:19.5px}
+  .social .split{grid-template-columns:520px 1fr;gap:64px}
+  .social .diia{width:380px}
+  .big{font-size:104px;white-space:nowrap}
+  .list{font-size:25px;gap:14px;padding-left:28px}
+  .qualification .split{grid-template-columns:1fr 760px;gap:48px}
+  .qualification .facts-light .fact b{font-size:34px}
+  .qualification .facts-light .fact span{font-size:19.5px}
+  .qualification .nqa{width:240px}
+
+  .intl{grid-template-columns:1fr 380px;gap:40px}
+  .intl .stats{grid-template-columns:repeat(3,1fr);gap:32px 28px}
+  .intl .stat b{font-size:38px;white-space:nowrap}
+  .intl .stat span{font-size:18.5px}
+  .intl .map{max-width:380px}
+  .strip{padding:10px 14px;border-radius:18px}
+  .strip img{min-width:0}
+
+  /* finale */
+  .unique .stage{padding:44px 64px 36px}
+  .unique .vb{margin-top:0;justify-content:stretch}
+  .finale{flex:1;grid-template-columns:1fr 360px;gap:40px;padding:44px 52px;border-radius:36px}
+  .finale h2{font-size:38px;margin-top:18px;max-width:none}
+  .traits{gap:22px;margin-top:30px}
+  .trait{padding-left:22px}
+  .trait h3{font-size:22px}
+  .trait p{font-size:18.5px;margin-top:8px}
+  .finale .orbit{max-width:360px}
+  .thanks{font-size:36px;margin-top:26px}
+
+  /* form */
+  table{font-size:18px;min-width:0}
+  th,td{padding:11px 20px}
+  th{width:30%}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .spin-a,.spin-b,.spin-c,.view{animation:none}
+  .hub a,.poster,.rail{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="t">Університет імені Альфреда Нобеля</span>
+  <button type="button" id="menu-btn" aria-controls="rail" aria-expanded="false">Зміст</button>
+</div>
+
+<nav class="rail" id="rail" aria-label="Розділи презентації">
+  <a class="rail-logo" href="#home"><img src="assets/anu-logo.png" alt="ANU — Alfred Nobel University"></a>
+  <ol class="rail-list">
+    <li><a href="#home"><span class="n">00</span>Головна</a></li>
+    <li><a href="#numbers"><span class="n">01</span>Університет у цифрах</a></li>
+    <li><a href="#history"><span class="n">02</span>30+ років розвитку</a></li>
+    <li><a href="#mission"><span class="n">03</span>Місія і цінності</a></li>
+    <li><a href="#program"><span class="n">04</span>City Management</a></li>
+    <li><a href="#research"><span class="n">05</span>ERA-PEACE</a></li>
+    <li><a href="#civic"><span class="n">06</span>CIVIC-UP</a></li>
+    <li><a href="#social"><span class="n">07</span>Дія.Бізнес Дніпро</a></li>
+    <li><a href="#qualification"><span class="n">08</span>Кваліфікаційний центр</a></li>
+    <li><a href="#international"><span class="n">09</span>Міжнародний вектор</a></li>
+    <li><a href="#unique"><span class="n">10</span>Унікальність</a></li>
+    <li><a href="#form"><span class="n">11</span>Паспорт університету</a></li>
+  </ol>
+  <div class="rail-foot">
+    <span class="counter" id="counter">00 / 11</span>
+    <button type="button" id="prev" aria-label="Попередній розділ">←</button>
+    <button type="button" id="next" aria-label="Наступний розділ">→</button>
+    <button type="button" class="fs" id="fs">На весь екран</button>
+  </div>
+</nav>
+
+<div class="progress" aria-hidden="true"><span></span></div>
+
+<main id="main">
+
+<!-- 00 HOME -->
+<section class="view home" data-name="home" aria-labelledby="h-home">
+ <div class="stage">
+  <div class="vb">
+    <div class="hero">
+      <div>
+        <img class="logo" src="assets/anu-logo.png" alt="ANU — Alfred Nobel University">
+        <h1 id="h-home">Університет імені Альфреда Нобеля</h1>
+        <p class="tag">Вчіться. Створюйте. Досягайте.</p>
+        <p class="meta">Дніпро, з 1993 року · Програма професійного розвитку академічних менеджерів, модуль 1</p>
+        <div class="hero-actions">
+          <a class="btn" href="#numbers">Почати огляд →</a>
+          <a class="btn ghost" href="#form">Паспорт університету</a>
+        </div>
+      </div>
+      <div class="orbit" aria-hidden="true">
+        <video class="planet" src="assets/planet.mp4" poster="assets/planet-poster.jpg" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+      </div>
+    </div>
+    <div>
+      <div class="hub-head">
+        <h2>Зміст</h2>
+        <p>Оберіть розділ або гортайте клавішами ← →</p>
+      </div>
+      <nav class="hub" aria-label="Зміст презентації" style="margin-top:16px">
+        <a href="#numbers"><span class="n">01</span><span class="t">Університет у цифрах</span></a>
+        <a href="#history"><span class="n">02</span><span class="t">30+ років розвитку</span></a>
+        <a href="#mission"><span class="n">03</span><span class="t">Місія і цінності</span></a>
+        <a href="#program"><span class="key">ключове</span><span class="n">04</span><span class="t">City Management</span></a>
+        <a href="#research"><span class="key">ключове</span><span class="n">05</span><span class="t">ERA-PEACE</span></a>
+        <a href="#civic"><span class="n">06</span><span class="t">CIVIC-UP</span></a>
+        <a href="#social"><span class="key">ключове</span><span class="n">07</span><span class="t">Дія.Бізнес Дніпро</span></a>
+        <a href="#qualification"><span class="n">08</span><span class="t">Кваліфікаційний центр</span></a>
+        <a href="#international"><span class="n">09</span><span class="t">Міжнародний вектор</span></a>
+        <a href="#unique"><span class="n">10</span><span class="t">Унікальність</span></a>
+        <a href="#form"><span class="n">11</span><span class="t">Паспорт університету</span></a>
+        <a class="start" href="#numbers"><span class="n">→</span><span class="t">Почати огляд</span></a>
+      </nav>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- 01 NUMBERS -->
+<section class="view" data-name="numbers" aria-labelledby="h-numbers" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">01</span>Хто ми</p>
+    <h2 id="h-numbers">Університет у цифрах</h2>
+  </header>
+  <div class="vb">
+    <div class="stats">
+      <div class="stat"><b>1 320</b><span>здобувачів вищої освіти (2025/2026)</span></div>
+      <div class="stat"><b>≈200</b><span>штатних працівників</span></div>
+      <div class="stat"><b>250+</b><span>науковців, викладачів і практиків</span></div>
+      <div class="stat"><b>45 000</b><span>випускників із 30+ країн світу</span></div>
+      <div class="stat"><b>90+</b><span>глобальних партнерів на 4 континентах</span></div>
+      <div class="stat"><b>30+</b><span>програм з міжнародною акредитацією ZEvA</span></div>
+      <div class="stat v"><b>ТОП-5</b><span>приватних ЗВО України</span></div>
+      <div class="stat v"><b>25%</b><span>кращих університетів світу</span></div>
+      <div class="stat v"><b>133</b><span>позиція в Scopus серед ЗВО України</span></div>
+      <div class="stat v"><b>#1</b><span>єдиний ЗВО, що розвиває Нобелівський рух в Україні</span></div>
+      <div class="stat v"><b>#1</b><span>перший ЗВО України в Deep Tech Talent Initiative</span></div>
+      <div class="stat v"><b>1993</b><span>рік заснування</span></div>
+    </div>
+    <div class="chips-wrap">
+      <h3>Ключові спеціальності</h3>
+      <div class="chips">
+        <span class="chip">Менеджмент</span><span class="chip">Маркетинг</span><span class="chip">Підприємництво та торгівля</span><span class="chip">Міжнародні економічні відносини</span><span class="chip">Психологія</span><span class="chip">Комп’ютерні науки</span><span class="chip">Філологія</span><span class="chip">Право</span><span class="chip">Професійна освіта</span>
+      </div>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#history">Далі: 30+ років розвитку →</a></div>
+ </div>
+</section>
+
+<!-- 02 HISTORY -->
+<section class="view" data-name="history" aria-labelledby="h-history" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">02</span>Історія</p>
+    <h2 id="h-history">30+ років розвитку</h2>
+  </header>
+  <div class="vb history history-body">
+    <div class="orbit">
+      <svg viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g class="spin-a"><circle cx="260" cy="260" r="245" fill="none" stroke="#00386F" stroke-width="3"/><circle cx="137" cy="48" r="15" fill="#00386F"/><circle cx="383" cy="48" r="15" fill="#00386F"/><circle cx="505" cy="260" r="15" fill="#00386F"/><circle cx="119" cy="461" r="15" fill="#00386F"/></g>
+        <g class="spin-b"><circle cx="260" cy="260" r="190" fill="none" stroke="#00386F" stroke-width="3"/><circle cx="81" cy="195" r="14" fill="#00386F"/><circle cx="439" cy="325" r="14" fill="#00386F"/></g>
+        <g class="spin-c"><circle cx="260" cy="260" r="142" fill="none" stroke="#00386F" stroke-width="3"/><circle cx="260" cy="118" r="13" fill="#00386F"/><circle cx="260" cy="402" r="13" fill="#00386F"/></g>
+      </svg>
+      <div class="orbit-caption"><b>2024–2025</b><span>Запуск програми City Management у партнерстві з Coventry University</span></div>
+    </div>
+    <svg class="axis" viewBox="0 0 110 740" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M75,26 L75,120 L25,135 L25,205 L75,220 L75,300 L25,315 L25,385 L75,400 L75,480 L25,495 L25,565 L75,580 L75,640 L25,655 L25,690 L75,714" fill="none" stroke="#00386F" stroke-width="3" stroke-linejoin="round"/><g fill="#F7F8FD" stroke="#00386F" stroke-width="3"><circle cx="75" cy="120" r="6"/><circle cx="25" cy="135" r="6"/><circle cx="25" cy="205" r="6"/><circle cx="75" cy="220" r="6"/><circle cx="75" cy="300" r="6"/><circle cx="25" cy="315" r="6"/><circle cx="25" cy="385" r="6"/><circle cx="75" cy="400" r="6"/><circle cx="75" cy="480" r="6"/><circle cx="25" cy="495" r="6"/><circle cx="25" cy="565" r="6"/><circle cx="75" cy="580" r="6"/><circle cx="75" cy="640" r="6"/><circle cx="25" cy="655" r="6"/><circle cx="25" cy="690" r="6"/></g><path d="M75,0 Q80,21 101,26 Q80,31 75,52 Q70,31 49,26 Q70,21 75,0 Z" fill="#00386F"/><path d="M75,688 Q80,709 101,714 Q80,719 75,740 Q70,719 49,714 Q70,709 75,688 Z" fill="#00386F"/></svg>
+    <ol class="tl">
+      <li style="--x:1062px;--y:150px"><span class="y">2023</span><p>Перший ЗВО України в Deep Tech Talent Initiative; перша в Європі програма «Aerospace Market»</p></li>
+      <li style="--x:600px;--y:236px;--ta:right"><span class="y">2018</span><p>Університет стає членом AACSB</p></li>
+      <li style="--x:1062px;--y:296px"><span class="y">2016</span><p>Міжнародна акредитація всіх освітніх програм агенцією ZEvA</p></li>
+      <li style="--x:600px;--y:346px;--ta:right"><span class="y">2012</span><p>Міжнародна школа бізнесу (IBS)</p></li>
+      <li style="--x:1062px;--y:410px"><span class="y">2010</span><p>Єдина в Україні програма BA (Hons) International Management з британським дипломом, валідованим UWTSD</p></li>
+      <li style="--x:600px;--y:456px;--ta:right"><span class="y">2008</span><p>Єдина у світі скульптурна композиція «Планета Альфреда Нобеля»; партнерство з Nobel Family Society і Нобелівським комітетом; <b>I Нобелівський конгрес</b></p></li>
+      <li style="--x:1062px;--y:556px"><span class="y">2007</span><p>Перша онлайн-міжнародна наукова конференція АНУ</p></li>
+      <li style="--x:600px;--y:650px;--ta:right"><span class="y">2005–2006</span><p>Запровадження європейських освітніх стандартів</p></li>
+      <li style="--x:1062px;--y:672px"><span class="y">2004</span><p>Один із перших кар’єрних центрів в університетах України</p></li>
+      <li style="--x:600px;--y:762px;--ta:right"><span class="y">1997</span><p>Перша MBA-школа в Дніпрі; 1999 — перший іноземний студент</p></li>
+      <li style="--x:1062px;--y:788px"><span class="y">1993</span><p>Дніпропетровська академія менеджменту, бізнесу та права</p></li>
+    </ol>
+  </div>
+  <div class="vf" style="margin-top:auto"><a class="next-link" href="#mission">Далі: місія і цінності →</a></div>
+ </div>
+</section>
+
+<!-- 03 MISSION -->
+<section class="view" data-name="mission" aria-labelledby="h-mission" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">03</span>Місія і цінності</p>
+    <h2 id="h-mission" class="vh-only">Місія і цінності</h2>
+  </header>
+  <div class="vb">
+    <p class="mission">Університет, який допомагає амбітним особистостям опанувати нове мислення і знайти своє покликання</p>
+    <div class="values-wrap">
+      <div class="values">
+        <div class="value"><h3>Мрії та амбіції</h3><p>Віримо в силу мрій і стимулюємо амбіції</p></div>
+        <div class="value"><h3>Наука, інновації, глибинні технології</h3><p>Підтримуємо нові ідеї, дослідження й технології</p></div>
+        <div class="value"><h3>Освіта для життя</h3><p>Готуємо розв’язувати реальні завдання</p></div>
+        <div class="value"><h3>Інклюзивність та різноманіття</h3><p>Відкриті для різних культур, переконань і потреб</p></div>
+        <div class="value"><h3>Відповідальність за майбутнє</h3><p>Бережемо ресурси, розвиваємо інновації</p></div>
+        <div class="value"><h3>Глобальне співробітництво</h3><p>Партнерства для розв’язання глобальних проблем</p></div>
+      </div>
+      <img src="assets/values-illustration.png" alt="Ілюстрація: людина на драбині дивиться в підзорну трубу">
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#program">Далі: City Management →</a></div>
+ </div>
+</section>
+
+<!-- 04 PROGRAM -->
+<section class="view program" data-name="program" aria-labelledby="h-program" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">04</span>Ключова освітня програма</p>
+    <h2 id="h-program">City Management — магістратура з подвійним дипломом</h2>
+  </header>
+  <div class="vb">
+    <div class="split">
+      <div class="stack">
+        <p class="lead">Два європейські дипломи — Університету імені Альфреда Нобеля та Coventry University (Велика Британія).</p>
+        <p class="lead">Готуємо керівників повоєнної відбудови міст: смарт-місто, міська логістика, економічне врядування, міжнародні проєкти. Лабораторія «Smart City» і проєкт «Public Leadership».</p>
+        <p><span class="pill">Єдина в Україні акредитована магістерська програма з City Management</span></p>
+        <img class="logo-sm" src="assets/coventry.png" alt="Логотип Coventry University">
+      </div>
+      <div class="panel">
+        <div class="fact"><b>1,5 року</b><span>денна форма — онлайн або змішано</span></div>
+        <div class="fact"><b>Англійською</b><span>рівень B2–C1, підготовка до IELTS у програмі</span></div>
+        <div class="fact"><b>2 дипломи</b><span>АНУ + Coventry University</span></div>
+        <div class="fact"><b>64 магістранти</b><span>у трьох наборах: 21 · 25 · 18 (2024–2026)</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#research">Далі: ERA-PEACE →</a></div>
+ </div>
+</section>
+
+<!-- 05 RESEARCH -->
+<section class="view research" data-name="research" aria-labelledby="h-research" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">05</span>Ключове дослідження</p>
+    <h2 id="h-research">ERA-PEACE: дослідження для миру та безпеки</h2>
+  </header>
+  <div class="vb">
+    <div class="split">
+      <div class="stack">
+        <p class="lead">Проєкт Horizon Europe (Twinning) під координацією АНУ: зміцнюємо дослідницький потенціал у сферах миру, безпеки й суспільної стійкості, інтегруючи досвід українських цивільних у міжнародні програми підготовки фахівців.</p>
+        <div class="duo">
+          <div class="mini"><b>€1,3 млн</b><span>бюджет проєкту</span></div>
+          <div class="mini"><b>3 роки</b><span>тривалість</span></div>
+        </div>
+        <p class="note">Консорціум: Coventry University і Coventry University Academic Services (Велика Британія), SYNYO GmbH (Австрія).</p>
+        <p class="note"><b>Також:</b> Future Urban Growth Lab for Ukraine з UCL — програмне планування відбудови міст, нагорода UCL Data Empowered Societies 2025/26.</p>
+      </div>
+      <div>
+        <button class="poster" type="button" data-zoom="assets/era-peace.jpg"><img src="assets/era-peace.jpg" alt="Постер проєкту ERA-PEACE: Horizon Europe, бюджет 1,3 млн євро, координатор — Alfred Nobel University"></button>
+        <p class="poster-cap">Натисніть, щоб збільшити</p>
+      </div>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#civic">Далі: CIVIC-UP →</a></div>
+ </div>
+</section>
+
+<!-- 06 CIVIC-UP -->
+<section class="view civic" data-name="civic" aria-labelledby="h-civic" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">06</span>Проєкт для громад Європи</p>
+    <h2 id="h-civic">CIVIC-UP: голос громад у житті міст</h2>
+  </header>
+  <div class="vb">
+    <div class="split">
+      <div>
+        <button class="poster" type="button" data-zoom="assets/civic-up.jpg"><img src="assets/civic-up.jpg" alt="Постер проєкту CIVIC-UP програми ЄС CERV: 16 партнерів з 9 країн, серед них Університет імені Альфреда Нобеля"></button>
+        <p class="poster-cap">Натисніть, щоб збільшити</p>
+      </div>
+      <div class="stack">
+        <p class="lead">Програма ЄС CERV: залучаємо вразливі міські групи до ухвалення рішень через громадянську науку та громадські консультативні ради.</p>
+        <div class="facts-light">
+          <div class="fact"><b>16 партнерів</b><span>з 9 країн Європи, серед них АНУ</span></div>
+          <div class="fact"><b>120</b><span>підготовлених громадських дослідників</span></div>
+          <div class="fact"><b>20 місяців</b><span>6 звітів громадянської науки, 6 консультативних рад</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#social">Далі: Дія.Бізнес Дніпро →</a></div>
+ </div>
+</section>
+
+<!-- 07 SOCIAL -->
+<section class="view social" data-name="social" aria-labelledby="h-social" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">07</span>Ключовий соціальний проєкт</p>
+    <h2 id="h-social">Дія.Бізнес Дніпро — центр підтримки підприємців на нашому кампусі</h2>
+  </header>
+  <div class="vb">
+    <div class="split">
+      <div class="stack">
+        <img class="diia" src="assets/diia-business.png" alt="Логотип Diia.Business" style="max-width:380px">
+        <div style="border-top:4px solid var(--violet);padding-top:18px">
+          <p class="big">275 м²</p>
+          <p class="note" style="margin-top:12px">простору для чинних і майбутніх підприємців; відкрито 28 вересня 2025</p>
+        </div>
+      </div>
+      <div class="stack">
+        <ul class="list">
+          <li>Безкоштовні консультації: право, маркетинг, фінанси й облік</li>
+          <li>Навчання, грантові програми, пошук партнерів для масштабування</li>
+          <li>Pop-up зона, де підприємці тестують продукти на покупцях</li>
+          <li>Перший проєкт — жіночий акселератор «Відважна 3. Цифрова еволюція бізнесу»</li>
+        </ul>
+        <p><span class="pill ink">Жива лабораторія: бізнес · влада · науковці · студенти</span></p>
+        <p class="note">Партнери: програма BLOOM (UK aid), бізнес-школа IBS при АНУ, UKRSIBBANK BNP Paribas Group.</p>
+      </div>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#qualification">Далі: Кваліфікаційний центр →</a></div>
+ </div>
+</section>
+
+<!-- 08 QUALIFICATION -->
+<section class="view qualification" data-name="qualification" aria-labelledby="h-qualification" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">08</span>Кваліфікації та мобільність</p>
+    <h2 id="h-qualification">Кваліфікаційний центр АНУ</h2>
+  </header>
+  <div class="vb">
+    <div class="split">
+      <div class="stack">
+        <div class="facts-light">
+          <div class="fact"><b>Квітень 2026</b><span>відкриття: оцінювання компетентностей і присвоєння професійних кваліфікацій</span></div>
+          <div class="fact"><b>3 кваліфікації</b><span>практичний психолог (соціальна сфера) — I, II та вища категорії; з березня 2027 — бізнес- і кар’єрний консультант</span></div>
+          <div class="fact"><b>7 НРК = 7 EQF</b><span>основа для міжнародного кар’єрного центру та професійної мобільності в Європі</span></div>
+        </div>
+        <img class="nqa" src="assets/nqa.png" alt="Логотип National Qualifications Agency" style="max-width:240px">
+      </div>
+      <div>
+        <button class="poster" type="button" data-zoom="assets/qualification.jpg"><img src="assets/qualification.jpg" alt="Інфографіка: Кваліфікаційний центр АНУ і міжнародна стратегія професійної мобільності"></button>
+        <p class="poster-cap">Натисніть, щоб збільшити</p>
+      </div>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#international">Далі: міжнародний вектор →</a></div>
+ </div>
+</section>
+
+<!-- 09 INTERNATIONAL -->
+<section class="view" data-name="international" aria-labelledby="h-international" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">09</span>Міжнародний вектор</p>
+    <h2 id="h-international">4 континенти, 25 країн, 107 угод про співпрацю</h2>
+  </header>
+  <div class="vb">
+    <div class="intl">
+      <div class="stats">
+        <div class="stat v"><b>€2,86 млн</b><span>загальний бюджет проєктної діяльності, 2024–2025 н. р.</span></div>
+        <div class="stat v"><b>16</b><span>міжнародних проєктів; 52 подані заявки, з них 11 — до програм ЄС</span></div>
+        <div class="stat v"><b>7</b><span>програм подвійного диплому: 5 магістерських і 2 бакалаврські</span></div>
+        <div class="stat"><b>21</b><span>угода Erasmus+ KA1 і 5 проєктів Жан Моне</span></div>
+        <div class="stat"><b>167</b><span>запрошених іноземних викладачів</span></div>
+        <div class="stat"><b>2</b><span>провідні британські партнери — UWTSD і Coventry University</span></div>
+      </div>
+      <img class="map" src="assets/europe-map.png" alt="Мапа Європи — географія партнерств університету">
+    </div>
+    <p class="note">UK–Ukraine Twinning (Cormack Consultancy Group, Фонд Президента України, Universities UK) · член Wales Global Academy · Erasmus+ CBHE SIN-NEC</p>
+    <div class="strip"><img src="assets/partners-strip.png" alt="Партнери й акредитації: Coventry University, University of Wales Trinity Saint David, Le Mans Université, ISMA, Erasmus+, British Council, AACSB, ZEvA, Cormack Consultancy Group"></div>
+  </div>
+  <div class="vf"><a class="next-link" href="#unique">Далі: унікальність →</a></div>
+ </div>
+</section>
+
+<!-- 10 UNIQUE -->
+<section class="view unique" data-name="unique" aria-labelledby="h-unique" hidden>
+ <div class="stage">
+  <div class="vb">
+    <div class="finale">
+      <div>
+        <p class="eyebrow"><span class="num">10</span>Унікальність</p>
+        <h2 id="h-unique">З ракет — «Планета Нобеля». З війни — знання для миру й відбудови.</h2>
+        <div class="traits">
+          <div class="trait"><h3>Нобелівська спадщина</h3><p>«Планета Альфреда Нобеля» (2008) — єдина у світі скульптурна композиція з матеріалів знятих з озброєння стратегічних ракет; щороку її поповнюють медалі нових лауреатів. Почесні професори АНУ — нобелівські лауреати Маріо Варгас Льоса та Олександра Матвійчук.</p></div>
+          <div class="trait"><h3>Повний цикл: освіта → наука → громада</h3><p>Освіта (City Management з Coventry), наука (ERA-PEACE, Urban Growth Lab з UCL) і громада (Дія.Бізнес Дніпро, CIVIC-UP) працюють в одній зв’язці — навколо відбудови міст.</p></div>
+          <div class="trait"><h3>Першість і визнання</h3><p>Єдиний український університет, що розвиває Нобелівський рух; перший ЗВО України в EIT Deep Tech Talent Initiative; ТОП-5 приватних ЗВО України.</p></div>
+        </div>
+        <p class="thanks">Дякуємо!</p>
+      </div>
+      <div class="orbit" aria-hidden="true">
+        <svg viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg">
+          <g class="spin-a"><circle cx="260" cy="260" r="250" fill="none" stroke="#C5CEF7" stroke-width="2.5"/><circle cx="135" cy="43" r="12" fill="#C5CEF7"/><circle cx="510" cy="260" r="12" fill="#C5CEF7"/><circle cx="118" cy="436" r="12" fill="#C5CEF7"/></g>
+          <g class="spin-b"><circle cx="260" cy="260" r="205" fill="none" stroke="#C5CEF7" stroke-width="2" opacity=".6"/><circle cx="68" cy="190" r="10" fill="#C5CEF7"/></g>
+        </svg>
+        <div class="disc"><img src="assets/anu-planet.jpg" alt=""></div>
+      </div>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#form">Паспорт університету →</a></div>
+ </div>
+</section>
+
+<!-- 11 FORM -->
+<section class="view" data-name="form" aria-labelledby="h-form" hidden>
+ <div class="stage">
+  <header>
+    <p class="eyebrow"><span class="num">11</span>Практичне завдання 1</p>
+    <h2 id="h-form">Паспорт університету</h2>
+  </header>
+  <div class="vb">
+    <div class="table-wrap">
+      <table>
+        <tr><th scope="row">Назва університету</th><td>ВНЗ «Університет імені Альфреда Нобеля», м. Дніпро (засновано 1993)</td></tr>
+        <tr><th scope="row">Кількість здобувачів вищої освіти</th><td>1 320 (середній контингент 2025/2026; бакалаврат, магістратура, PhD)</td></tr>
+        <tr><th scope="row">Кількість персоналу</th><td>≈200 працівників; разом із практиками — 250+ науковців і викладачів</td></tr>
+        <tr><th scope="row">Ключові спеціальності</th><td>Менеджмент, Маркетинг, Підприємництво та торгівля, Міжнародні економічні відносини, Психологія, Комп’ютерні науки, Філологія, Право, Професійна освіта</td></tr>
+        <tr><th scope="row">Місія університету</th><td>«Університет, який допомагає амбітним особистостям опанувати нове мислення і знайти своє покликання»</td></tr>
+        <tr><th scope="row">Цінності університету</th><td>Мрії та амбіції; наука, інновації, глибинні технології; освіта для життя; інклюзивність та різноманіття; відповідальність за майбутнє; глобальне співробітництво</td></tr>
+        <tr><th scope="row">Ключова освітня програма</th><td>City Management (магістр) — подвійний диплом з Coventry University (Велика Британія)</td></tr>
+        <tr><th scope="row">Ключове дослідження</th><td>ERA-PEACE — Horizon Europe Twinning (€1,3 млн, 3 роки), координатор — АНУ</td></tr>
+        <tr><th scope="row">Ключовий соціальний проєкт</th><td>Центр підтримки підприємців Дія.Бізнес Дніпро на кампусі університету</td></tr>
+        <tr><th scope="row">Унікальність університету</th><td>«Планета Альфреда Нобеля»; нобелівські лауреати — почесні професори; повний цикл «освіта → наука → громада» для миру й відбудови</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="vf"><a class="next-link" href="#home">На головну →</a></div>
+ </div>
+</section>
+
+</main>
+
+<dialog class="lightbox" id="lightbox" aria-label="Збільшене зображення">
+  <img id="lightbox-img" src="" alt="">
+  <button type="button" id="lightbox-close">Закрити</button>
+</dialog>
+
+<script>
+(function(){
+  var views = Array.prototype.slice.call(document.querySelectorAll('.view'));
+  var order = views.map(function(v){ return v.getAttribute('data-name'); });
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail-list a'));
+  var counter = document.getElementById('counter');
+  var bar = document.querySelector('.progress span');
+  var rail = document.getElementById('rail');
+  var main = document.getElementById('main');
+  var menuBtn = document.getElementById('menu-btn');
+  var prev = document.getElementById('prev');
+  var next = document.getElementById('next');
+  var dlg = document.getElementById('lightbox');
+  var dlgImg = document.getElementById('lightbox-img');
+  var stageQuery = window.matchMedia('(min-width:1024px) and (min-height:560px)');
+  var current = 'home';
+  var last = order.length - 1;
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    if (!stageQuery.matches) { main.style.removeProperty('--k'); return; }
+    var k = Math.min(main.clientWidth / 1440, main.clientHeight / 960);
+    main.style.setProperty('--k', k.toFixed(4));
+  }
+
+  function show(name){
+    if (order.indexOf(name) === -1) name = 'home';
+    current = name;
+    views.forEach(function(v){ v.hidden = v.getAttribute('data-name') !== name; });
+    links.forEach(function(a){
+      if (a.getAttribute('href') === '#' + name) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    var i = order.indexOf(name);
+    counter.textContent = pad(i) + ' / ' + pad(last);
+    bar.style.width = (i / last * 100) + '%';
+    prev.disabled = i === 0;
+    next.disabled = i === last;
+    rail.classList.remove('open');
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+    window.scrollTo(0, 0);
+    fit();
+  }
+
+  function go(step){
+    var i = order.indexOf(current) + step;
+    if (i >= 0 && i <= last) location.hash = order[i];
+  }
+
+  window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
+  window.addEventListener('resize', fit);
+  document.addEventListener('fullscreenchange', function(){ setTimeout(fit, 60); });
+  prev.addEventListener('click', function(){ go(-1); });
+  next.addEventListener('click', function(){ go(1); });
+
+  document.addEventListener('keydown', function(e){
+    if (dlg.open) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); go(1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(-1); }
+    else if (e.key === 'Home') { location.hash = 'home'; }
+  });
+
+  document.getElementById('fs').addEventListener('click', function(){
+    try {
+      if (!document.fullscreenElement) {
+        var p = document.documentElement.requestFullscreen();
+        if (p && p.catch) p.catch(function(){});
+      } else {
+        var q = document.exitFullscreen();
+        if (q && q.catch) q.catch(function(){});
+      }
+    } catch (err) {}
+  });
+
+  if (menuBtn) menuBtn.addEventListener('click', function(){
+    var open = rail.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-zoom]'), function(b){
+    b.addEventListener('click', function(){
+      dlgImg.src = b.getAttribute('data-zoom');
+      var inner = b.querySelector('img');
+      dlgImg.alt = inner ? inner.alt : '';
+      try { dlg.showModal(); } catch (err) { dlg.setAttribute('open', ''); }
+    });
+  });
+  function closeDlg(){ try { dlg.close(); } catch (err) { dlg.removeAttribute('open'); } }
+  document.getElementById('lightbox-close').addEventListener('click', closeDlg);
+  dlg.addEventListener('click', function(e){ if (e.target === dlg) closeDlg(); });
+
+  var planet = document.querySelector('video.planet');
+  if (planet) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      planet.removeAttribute('autoplay');
+      try { planet.pause(); } catch (err) {}
+    } else {
+      var pp = planet.play && planet.play();
+      if (pp && pp.catch) pp.catch(function(){});
+    }
+  }
+
+  show(location.hash.slice(1) || 'home');
+})();
+</script>
+</body>
+</html>
